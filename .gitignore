@@ -1,0 +1,9 @@
+data/
+models/
+*.zip
+__pycache__/
+.ipynb_checkpoints/
+.venv/
+.env
+kaggle.json
+.DS_Store
