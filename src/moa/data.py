@@ -1,6 +1,7 @@
-import pandas as pd 
+import pandas as pd
 
 from moa.config import DATA_DIR
+
 
 def load_raw_data():
     train_features = pd.read_csv(DATA_DIR / "train_features.csv")
@@ -10,12 +11,14 @@ def load_raw_data():
 
     return train_features, train_targets, test_features, sample_submission
 
+
 def get_feature_groups(train_features):
     meta_cols = ["cp_type", "cp_time", "cp_dose"]
     gene_cols = [col for col in train_features.columns if col.startswith("g-")]
     cell_cols = [col for col in train_features.columns if col.startswith("c-")]
 
     return meta_cols, gene_cols, cell_cols
+
 
 def make_X_y(train_features, train_targets, top_n_targets=20):
     target_cols = [col for col in train_targets.columns if col != "sig_id"]

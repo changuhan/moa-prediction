@@ -22,10 +22,7 @@ def main():
     )
 
     X_train, X_valid, y_train, y_valid = train_test_split(
-        X, 
-        y, 
-        test_size=TEST_SIZE, 
-        random_state=RANDOM_STATE
+        X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE
     )
 
     numeric_features = gene_cols + cell_cols
@@ -42,7 +39,7 @@ def main():
         max_iter=1000,
         solver="liblinear",
         class_weight="balanced",
-        )
+    )
 
     model = Pipeline(
         steps=[
@@ -62,14 +59,14 @@ def main():
         y_pred=y_valid_pred,
         target_names=selected_targets,
     )
-    
+
     results = make_results_table(
         target_names=selected_targets,
         target_counts=target_counts,
         losses=losses,
     )
-    
-    results_dir = PROJECT_ROOT / "reports" 
+
+    results_dir = PROJECT_ROOT / "reports"
     results_dir.mkdir(parents=True, exist_ok=True)
     output_path = results_dir / f"baseline_top{len(selected_targets)}.csv"
     results.to_csv(output_path, index=False)
@@ -79,7 +76,5 @@ def main():
     print(f"Saved results to {output_path}")
 
 
-if __name__ == "__main__":    
+if __name__ == "__main__":
     main()
-
-
