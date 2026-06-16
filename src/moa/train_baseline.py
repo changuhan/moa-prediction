@@ -5,8 +5,8 @@ from sklearn.multiclass import OneVsRestClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
-
-from moa.config import PROJECT_ROOT, RANDOM_STATE, TEST_SIZE, TOP_N_TARGETS
+import joblib
+from moa.config import PROJECT_ROOT, RANDOM_STATE, TEST_SIZE, TOP_N_TARGETS, MODEL_DIR
 from moa.data import load_raw_data, get_feature_groups, make_X_y
 from moa.metrics import mean_multilabel_log_loss, make_results_table
 
@@ -65,6 +65,11 @@ def main():
         target_counts=target_counts,
         losses=losses,
     )
+
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    model_path = MODEL_DIR / "baseline_model.joblib"
+    joblib.dump(model, model_path)
+    print(f"Saved baseline model to {model_path}")
 
     results_dir = PROJECT_ROOT / "reports"
     results_dir.mkdir(parents=True, exist_ok=True)
