@@ -28,4 +28,7 @@ def make_X_y(train_features, train_targets, top_n_targets=20):
     X = train_features.drop(columns=["sig_id"])
     y = train_targets[selected_targets]
 
+    if not train_features["sig_id"].equals(train_targets["sig_id"]):
+        raise ValueError("The 'sig_id' columns in train_features and train_targets do not match.")
+    
     return X, y, selected_targets, target_counts
