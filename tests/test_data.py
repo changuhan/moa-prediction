@@ -55,19 +55,16 @@ def test_make_X_y_selects_most_frequent_targets():
     )
 
     assert "sig_id" not in X.columns
-
     assert selected_targets == ["target_a", "target_b"]
     assert list(y.columns) == ["target_a", "target_b"]
-
     assert X.shape == (4, 5)
     assert y.shape == (4, 2)
-
     assert target_counts["target_a"] == 3
     assert target_counts["target_b"] == 2
     assert target_counts["target_c"] == 1
 
 
-def test_make_X_y_raises_error_when_sig_ids_do_not_match():
+def test_make_X_y_rejects_misaligned_sample_ids():
     train_features = pd.DataFrame(
         {
             "sig_id": ["id_1", "id_2"],

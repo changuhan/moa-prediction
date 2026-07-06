@@ -7,3 +7,7 @@ __pycache__/
 .env
 kaggle.json
 .DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/_scratch/
