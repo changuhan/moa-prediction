@@ -15,6 +15,8 @@ Implemented a classical ML baseline with:
 * One-vs-Rest Logistic Regression baseline
 * Mean multi-label log loss evaluation
 * Per-target validation error report
+* Unit tests for data and metric utilities
+* GitHub Actions CI for automated test execution
 
 ## Dataset
 
@@ -41,15 +43,26 @@ data/raw/
 ## Project Structure
 
 ```text
+.github/
+  workflows/
+    ci.yml
+
 src/moa/
   config.py
   data.py
   metrics.py
   train_baseline.py
 
+tests/
+  test_data.py
+  test_metrics.py
+
 reports/
   experiment_log.md
   baseline_top206.csv
+
+requirements.txt
+requirements-dev.txt
 ```
 
 ## Baseline
@@ -66,6 +79,28 @@ Run:
 ```bash
 PYTHONPATH=src python -m moa.train_baseline
 ```
+
+## Testing and CI
+
+This repository includes unit tests for the core data and metric utilities.
+
+Run the full test suite locally:
+
+```bash
+PYTHONPATH=src python -m pytest tests -q
+```
+
+Current test coverage includes:
+
+* Feature group extraction for metadata, gene-expression, and cell-viability columns
+* Multi-label target construction from the most frequent scored targets
+* Sample alignment validation through `sig_id`
+* Mean multi-label log loss calculation
+* Per-target result table generation
+
+GitHub Actions runs the same test suite automatically on pull requests to `main`.
+
+The CI workflow uses small synthetic test data, so it does not require Kaggle credentials or raw competition files.
 
 ## Results
 
@@ -85,9 +120,10 @@ The full 206-target score is not directly comparable to the top-20 score because
 
 ## Next Steps
 
-* Save trained model artifacts
+* Add a batch prediction script for `test_features.csv`
 * Generate Kaggle-style submission files
+* Add a dummy prior baseline for comparison
+* Improve validation for rare labels and one-class splits
 * Add tree-based baselines
-* Add PyTorch MLP baseline
-* Improve rare-label validation
-* Add FastAPI inference endpoint
+* Add a PyTorch MLP baseline
+* Add a FastAPI inference endpoint
