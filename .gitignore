@@ -11,3 +11,4 @@ kaggle.json
 # Jupyter
 .ipynb_checkpoints/
 notebooks/_scratch/
+submissions/

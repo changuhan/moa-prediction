@@ -68,7 +68,13 @@ def main():
 
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     model_path = MODEL_DIR / "baseline_model.joblib"
-    joblib.dump(model, model_path)
+    
+    artifact = {
+        "model": model,
+        "target_names": selected_targets,
+    }
+
+    joblib.dump(artifact, model_path)
     print(f"Saved baseline model to {model_path}")
 
     results_dir = PROJECT_ROOT / "reports"
