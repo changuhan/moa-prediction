@@ -15,8 +15,10 @@ Implemented a classical ML baseline with:
 * One-vs-Rest Logistic Regression baseline
 * Mean multi-label log loss evaluation
 * Per-target validation error report
-* Unit tests for data and metric utilities
-* GitHub Actions CI for automated test execution
+* Batch prediction script for Kaggle-style submissions
+* Feature-free dummy prior baseline comparison
+* Unit-tested data, metric, prediction, and baseline utilities
+* GitHub Actions CI for automated regression testing
 
 ## Dataset
 
@@ -51,15 +53,21 @@ src/moa/
   config.py
   data.py
   metrics.py
+  predict.py
+  prior_baseline.py
   train_baseline.py
+  train_prior_baseline.py
 
 tests/
   test_data.py
   test_metrics.py
+  test_predict.py
+  test_prior_baseline.py
 
 reports/
   experiment_log.md
   baseline_top206.csv
+  baseline_comparison.csv
 
 requirements.txt
 requirements-dev.txt
@@ -97,6 +105,8 @@ Current test coverage includes:
 * Sample alignment validation through `sig_id`
 * Mean multi-label log loss calculation
 * Per-target result table generation
+* Kaggle-style submission formatting and validation
+* Dummy prior baseline computation and comparison sorting
 
 GitHub Actions runs the same test suite automatically on pull requests to `main`.
 
@@ -118,12 +128,34 @@ Mean multi-label log loss: 0.056092
 
 The full 206-target score is not directly comparable to the top-20 score because many rare targets are mostly zero.
 
+## Baseline Comparison
+
+A feature-free dummy prior baseline was added to compare the Logistic Regression model against target prevalence only.
+
+Run:
+
+```bash
+PYTHONPATH=src python -m moa.train_prior_baseline
+```
+
+Current comparison:
+
+```text
+dummy_prior mean log loss: 0.021202
+logistic_regression_ovr mean log loss: 0.056092
+```
+
+Current observation:
+
+The feature-free dummy prior baseline currently achieves a lower mean log loss than the initial class-balanced Logistic Regression baseline. This suggests that target prevalence, severe class imbalance, and probability calibration remain important challenges for this dataset.
+
+This result motivates the next set of experiments: comparing Logistic Regression with and without class balancing, analyzing probability calibration, and improving validation for rare labels.
+
 ## Next Steps
 
-* Add a batch prediction script for `test_features.csv`
-* Generate Kaggle-style submission files
-* Add a dummy prior baseline for comparison
-* Improve validation for rare labels and one-class splits
-* Add tree-based baselines
-* Add a PyTorch MLP baseline
-* Add a FastAPI inference endpoint
+- Compare Logistic Regression with and without `class_weight="balanced"`
+- Add probability calibration analysis
+- Improve validation for rare labels and one-class splits
+- Add tree-based baselines such as LightGBM or XGBoost
+- Add a PyTorch MLP baseline
+- Add a FastAPI inference endpoint
