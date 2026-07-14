@@ -1,0 +1,4 @@
+model,mean_log_loss,class_weight,uses_features,description
+dummy_prior,0.0212018864468059,none,False,Predicts each target's training-set positive rate for every validation sample.
+logistic_unbalanced,0.024701218599061235,none,True,"Uses metadata, gene-expression, and cell-viability features."
+logistic_balanced,0.05609158189839793,balanced,True,"Uses metadata, gene-expression, and cell-viability features."
