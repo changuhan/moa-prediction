@@ -24,10 +24,10 @@ def main():
     categorical_features = meta_cols
 
     model = build_logistic_ovr_pipeline(
-    numeric_features=numeric_features,
-    categorical_features=categorical_features,
-    class_weight="balanced",
-    )
+        numeric_features=numeric_features,
+        categorical_features=categorical_features,
+        class_weight="balanced",
+        )
 
     print("Training the baseline model...")
     model.fit(X_train, y_train)

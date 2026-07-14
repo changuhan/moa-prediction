@@ -138,24 +138,34 @@ Run:
 PYTHONPATH=src python -m moa.train_prior_baseline
 ```
 
+## Logistic Regression Class Weight Comparison
+
+The initial Logistic Regression baseline used `class_weight="balanced"`. Because the dummy prior baseline outperformed the class-balanced Logistic Regression model, I added a controlled comparison between balanced and unbalanced Logistic Regression using the same train/validation split.
+
+Run:
+
+```bash
+PYTHONPATH=src python -m moa.train_logistic_comparison
+```
+
 Current comparison:
 
 ```text
-dummy_prior mean log loss: 0.021202
-logistic_regression_ovr mean log loss: 0.056092
+dummy_prior          mean log loss: 0.021202
+logistic_unbalanced  mean log loss: 0.024701
+logistic_balanced    mean log loss: 0.056092
 ```
 
 Current observation:
 
-The feature-free dummy prior baseline currently achieves a lower mean log loss than the initial class-balanced Logistic Regression baseline. This suggests that target prevalence, severe class imbalance, and probability calibration remain important challenges for this dataset.
+Removing `class_weight="balanced"` substantially improved Logistic Regression validation log loss. This suggests that class weighting may hurt probability calibration under mean multi-label log loss for this highly imbalanced dataset.
 
-This result motivates the next set of experiments: comparing Logistic Regression with and without class balancing, analyzing probability calibration, and improving validation for rare labels.
+However, the dummy prior baseline still slightly outperforms the current unbalanced Logistic Regression model. This suggests that target prevalence remains a very strong baseline, and the next step is to analyze target imbalance, rare-label validation behavior, and probability calibration more deeply.
 
 ## Next Steps
 
-- Compare Logistic Regression with and without `class_weight="balanced"`
+- Add target prevalence and rare-label validation report
 - Add probability calibration analysis
-- Improve validation for rare labels and one-class splits
-- Add tree-based baselines such as LightGBM or XGBoost
-- Add a PyTorch MLP baseline
+- Add tree-based baselines such as LightGBM, XGBoost, or ExtraTrees
+- Add a PyTorch MLP baseline after classical baselines are better understood
 - Add a FastAPI inference endpoint
