@@ -1,15 +1,10 @@
-from sklearn.compose import ColumnTransformer
-from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
-from sklearn.multiclass import OneVsRestClassifier
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 import joblib
 from moa.config import PROJECT_ROOT, RANDOM_STATE, TEST_SIZE, TOP_N_TARGETS, MODEL_DIR
 from moa.data import load_raw_data, get_feature_groups, make_X_y
 from moa.metrics import mean_multilabel_log_loss, make_results_table
-
+from moa.modeling import build_logistic_ovr_pipeline
 
 def main():
     train_features, train_targets, _, _ = load_raw_data()
@@ -28,25 +23,12 @@ def main():
     numeric_features = gene_cols + cell_cols
     categorical_features = meta_cols
 
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ("num", StandardScaler(), numeric_features),
-            ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features),
-        ]
+    model = build_logistic_ovr_pipeline(
+    numeric_features=numeric_features,
+    categorical_features=categorical_features,
+    class_weight="balanced",
     )
 
-    baseline_model = LogisticRegression(
-        max_iter=1000,
-        solver="liblinear",
-        class_weight="balanced",
-    )
-
-    model = Pipeline(
-        steps=[
-            ("preprocessor", preprocessor),
-            ("classifier", OneVsRestClassifier(baseline_model, n_jobs=-1)),
-        ]
-    )
     print("Training the baseline model...")
     model.fit(X_train, y_train)
 
