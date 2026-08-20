@@ -1,4 +1,5 @@
 import joblib
+import numpy as np
 
 from moa.config import MODEL_DIR, SUBMISSION_DIR
 from moa.data import load_raw_data
@@ -19,6 +20,37 @@ def load_model_artifact(model_path):
         "as a dictionary containing 'model' and 'target_names'."
     )
 
+def zero_control_predictions(features, predictions):
+    if "cp_type" not in features.columns:
+        raise ValueError(
+            "features must contain a 'cp_type' column."
+        )
+
+    predictions = np.asarray(
+        predictions,
+        dtype=np.float64,
+    )
+
+    if predictions.ndim != 2:
+        raise ValueError(
+            "predictions must be a two-dimensional array."
+        )
+
+    if len(features) != predictions.shape[0]:
+        raise ValueError(
+            "features and predictions must have the same number of rows."
+        )
+
+    adjusted_predictions = predictions.copy()
+
+    control_mask = (
+        features["cp_type"]
+        .eq("ctl_vehicle")
+        .to_numpy()
+    )
+    adjusted_predictions[control_mask] = 0.0
+
+    return adjusted_predictions
 
 def build_submission(test_features, sample_submission, predictions, target_names):
     expected_targets = [col for col in sample_submission.columns if col != "sig_id"]
@@ -50,6 +82,11 @@ def main():
 
     X_test = test_features.drop(columns=["sig_id"])
     predictions = model.predict_proba(X_test)
+
+    predictions = zero_control_predictions(
+    features=X_test,
+    predictions=predictions,
+)
 
     submission = build_submission(
         test_features=test_features,

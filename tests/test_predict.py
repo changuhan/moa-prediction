@@ -2,7 +2,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from moa.predict import build_submission
+from moa.predict import (
+    build_submission,
+    zero_control_predictions,
+)
 
 
 def test_build_submission_preserves_sample_submission_format():
@@ -71,4 +74,90 @@ def test_build_submission_rejects_prediction_shape_mismatch():
             sample_submission=sample_submission,
             predictions=predictions,
             target_names=["target_a"],
+        )
+
+def test_zero_control_predictions_sets_control_rows_to_zero():
+    features = pd.DataFrame(
+        {
+            "cp_type": [
+                "trt_cp",
+                "ctl_vehicle",
+                "trt_cp",
+            ]
+        }
+    )
+    predictions = np.array(
+        [
+            [0.10, 0.90],
+            [0.25, 0.75],
+            [0.30, 0.70],
+        ]
+    )
+    original_predictions = predictions.copy()
+
+    adjusted = zero_control_predictions(
+        features=features,
+        predictions=predictions,
+    )
+
+    expected = np.array(
+        [
+            [0.10, 0.90],
+            [0.00, 0.00],
+            [0.30, 0.70],
+        ]
+    )
+
+    np.testing.assert_allclose(adjusted, expected)
+    np.testing.assert_allclose(
+        predictions,
+        original_predictions,
+    )
+
+
+def test_zero_control_predictions_rejects_missing_cp_type():
+    features = pd.DataFrame(
+        {
+            "feature": [1.0, 2.0],
+        }
+    )
+    predictions = np.array(
+        [
+            [0.10],
+            [0.20],
+        ]
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="cp_type",
+    ):
+        zero_control_predictions(
+            features=features,
+            predictions=predictions,
+        )
+
+
+def test_zero_control_predictions_rejects_row_mismatch():
+    features = pd.DataFrame(
+        {
+            "cp_type": [
+                "trt_cp",
+                "ctl_vehicle",
+            ]
+        }
+    )
+    predictions = np.array(
+        [
+            [0.10, 0.90],
+        ]
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="same number of rows",
+    ):
+        zero_control_predictions(
+            features=features,
+            predictions=predictions,
         )
