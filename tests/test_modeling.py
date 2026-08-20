@@ -46,3 +46,18 @@ def test_build_logistic_ovr_pipeline_allows_unbalanced_model():
     )
 
     assert model.named_steps["classifier"].estimator.class_weight is None
+
+def test_build_logistic_ovr_pipeline_allows_custom_c_value():
+    numeric_features = ["g-0", "c-0"]
+    categorical_features = ["cp_type", "cp_dose"]
+
+    model = build_logistic_ovr_pipeline(
+        numeric_features=numeric_features,
+        categorical_features=categorical_features,
+        class_weight=None,
+        C=0.01,
+    )
+
+    estimator = model.named_steps["classifier"].estimator
+
+    assert estimator.C == 0.01

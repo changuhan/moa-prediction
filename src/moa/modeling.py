@@ -18,6 +18,7 @@ def build_logistic_ovr_pipeline(
     numeric_features,
     categorical_features,
     class_weight="balanced",
+    C=1.0,
     max_iter=1000,
     solver="liblinear",
     n_jobs=-1,
@@ -28,6 +29,7 @@ def build_logistic_ovr_pipeline(
     )
 
     logistic_model = LogisticRegression(
+        C=C,
         max_iter=max_iter,
         solver=solver,
         class_weight=class_weight,
