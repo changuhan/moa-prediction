@@ -1,171 +1,213 @@
-# MoA Prediction ML Pipeline
+# Mechanism of Action Prediction
 
-Reproducible machine learning pipeline for predicting drug mechanisms of action from high-dimensional cellular response data.
+A reproducible multi-label machine learning pipeline for predicting biological mechanisms of action from high-dimensional cellular response data.
 
-This project uses the Kaggle **Mechanisms of Action (MoA) Prediction** dataset, where each sample contains compound treatment metadata, gene expression features, and cell viability features. The task is multi-label classification across 206 scored MoA targets.
+The project focuses on rigorous evaluation: strong baselines, multilabel-stratified out-of-fold validation, domain-aware prediction rules, and target-level diagnostics for highly imbalanced labels.
 
-## Current Status
+## Highlights
 
-Implemented a classical ML baseline with:
+- 206-target multi-label classification using gene-expression, cell-viability, and treatment metadata
+- 5-fold multilabel-stratified out-of-fold (OOF) evaluation
+- Feature-free target-prevalence baseline and One-vs-Rest Logistic Regression
+- Domain-aware handling of vehicle-control samples
+- Reusable `src/`-layout Python package
+- Unit-tested data, validation, modeling, prediction, and evaluation utilities
+- GitHub Actions CI with reproducible package installation
+- Experiment outputs separated from model implementation
 
-* Reusable data loading utilities
-* Feature grouping for metadata, gene expression, and cell viability columns
-* Multi-label target construction
-* Scikit-learn preprocessing pipeline
-* One-vs-Rest Logistic Regression baseline
-* Mean multi-label log loss evaluation
-* Per-target validation error report
-* Batch prediction script for Kaggle-style submissions
-* Feature-free dummy prior baseline comparison
-* Unit-tested data, metric, prediction, and baseline utilities
-* GitHub Actions CI for automated regression testing
+## Current Benchmark
 
-## Dataset
+All results below use 5-fold OOF evaluation across the 206 scored targets.
 
-Input features:
+| Model | Control rule | OOF mean log loss |
+|---|---:|---:|
+| Target prevalence prior | Yes | **0.020481** |
+| Logistic Regression (`C=0.01`) | Yes | 0.020741 |
+| Target prevalence prior | No | 0.020751 |
+| Logistic Regression (`C=0.01`) | No | 0.022466 |
+
+Lower is better.
+
+The prevalence baseline currently remains slightly stronger than Logistic Regression.
+
+This motivates the current analysis: determine which targets benefit from feature-based learning, which targets degrade, and whether performance differences are concentrated among rare labels.
+
+## Problem
+
+Each sample contains treatment metadata together with high-dimensional cellular response measurements:
 
 ```text
+Treatment metadata:
 cp_type, cp_time, cp_dose
+
+Gene-expression features:
 g-0 ... g-771
+
+Cell-viability features:
 c-0 ... c-99
 ```
 
-Targets:
+The prediction target consists of:
 
 ```text
-206 binary MoA labels
+206 binary mechanism-of-action labels
 ```
 
-Data files are not committed to the repository. They should be downloaded from Kaggle and placed under:
+The task is highly imbalanced, with many mechanisms occurring in only a small fraction of samples. This makes target prevalence a strong baseline and makes probability quality particularly important under log-loss evaluation.
+
+## Evaluation Strategy
+
+The project uses multilabel-stratified cross-validation to preserve label distributions across folds.
+
+For each model:
+
+1. training occurs only on the training portion of each fold
+2. predictions are generated for the held-out fold
+3. held-out predictions are combined into one OOF prediction matrix
+4. mean multi-label log loss is computed across all samples and targets
+
+This provides a consistent evaluation framework for comparing increasingly complex models.
+
+Vehicle-control samples are also evaluated with a domain-aware rule that sets predicted mechanism probabilities to zero.
+
+## Current Model
+
+The current feature-based baseline uses:
+
+```text
+Gene expression + cell viability
+            ↓
+      StandardScaler
+
+Treatment metadata
+            ↓
+       OneHotEncoder
+
+            ↓
+One-vs-Rest Logistic Regression
+            ↓
+   206 target probabilities
+```
+
+The model is intentionally simple so that changes in performance can be attributed to specific modeling and validation decisions.
+
+## Project Structure
+
+```text
+.
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
+├── src/
+│   └── moa/
+│       ├── config.py
+│       ├── data.py
+│       ├── metrics.py
+│       ├── modeling.py
+│       ├── oof.py
+│       ├── predict.py
+│       ├── prior_baseline.py
+│       ├── validation.py
+│       ├── train_baseline.py
+│       ├── train_logistic_comparison.py
+│       ├── train_oof_comparison.py
+│       └── train_prior_baseline.py
+│
+├── tests/
+├── reports/
+├── pyproject.toml
+├── requirements.txt
+├── requirements-dev.txt
+└── README.md
+```
+
+## Installation
+
+Create and activate a Python virtual environment, then install the project with development dependencies:
+
+```bash
+python -m pip install -e ".[dev]"
+```
+
+The editable installation makes the `moa` package importable directly while keeping local source changes immediately available.
+
+## Run the OOF Benchmark
+
+Run the current prior-vs-Logistic Regression benchmark with:
+
+```bash
+python -m moa.train_oof_comparison
+```
+
+The experiment evaluates:
+
+- target-prevalence OOF predictions
+- Logistic Regression OOF predictions
+- predictions with and without the vehicle-control rule
+- fold-level and overall mean log loss
+
+Experiment results are written to the `reports/` directory.
+
+## Testing and CI
+
+Run the full test suite locally with:
+
+```bash
+python -m pytest -q
+```
+
+The tests cover core behavior including:
+
+- feature and target construction
+- sample alignment validation
+- mean multi-label log loss
+- multilabel fold assignment
+- OOF prediction generation
+- modeling utilities
+- prediction post-processing
+- prior baseline behavior
+
+GitHub Actions installs the project in a clean environment and runs the test suite automatically for changes targeting `main`.
+
+## Data
+
+The project uses the public Mechanisms of Action (MoA) Prediction dataset originally released through Kaggle.
+
+Raw data files are not committed to the repository and should be placed under:
 
 ```text
 data/raw/
 ```
 
-## Project Structure
+## Current Investigation
+
+The strongest baseline currently predicts target prevalence without using biological features.
+
+Logistic Regression closes most of that gap after regularization and control-aware post-processing, but does not yet outperform the prevalence baseline overall.
+
+The next diagnostic step is therefore target-level rather than model-level:
 
 ```text
-.github/
-  workflows/
-    ci.yml
-
-src/moa/
-  config.py
-  data.py
-  metrics.py
-  predict.py
-  prior_baseline.py
-  train_baseline.py
-  train_prior_baseline.py
-
-tests/
-  test_data.py
-  test_metrics.py
-  test_predict.py
-  test_prior_baseline.py
-
-reports/
-  experiment_log.md
-  baseline_top206.csv
-  baseline_comparison.csv
-
-requirements.txt
-requirements-dev.txt
+overall log loss
+        ↓
+per-target log loss
+        ↓
+label prevalence
+        ↓
+identify where Logistic Regression helps or hurts
+        ↓
+design the next controlled experiment
 ```
 
-## Baseline
+This analysis is intended to distinguish failures caused by rare-label behavior, calibration, model capacity, or training strategy before introducing more complex models.
 
-Model:
+## Roadmap
 
-```text
-StandardScaler + OneHotEncoder
-→ OneVsRestClassifier(LogisticRegression)
-```
-
-Run:
-
-```bash
-PYTHONPATH=src python -m moa.train_baseline
-```
-
-## Testing and CI
-
-This repository includes unit tests for the core data and metric utilities.
-
-Run the full test suite locally:
-
-```bash
-PYTHONPATH=src python -m pytest tests -q
-```
-
-Current test coverage includes:
-
-* Feature group extraction for metadata, gene-expression, and cell-viability columns
-* Multi-label target construction from the most frequent scored targets
-* Sample alignment validation through `sig_id`
-* Mean multi-label log loss calculation
-* Per-target result table generation
-* Kaggle-style submission formatting and validation
-* Dummy prior baseline computation and comparison sorting
-
-GitHub Actions runs the same test suite automatically on pull requests to `main`.
-
-The CI workflow uses small synthetic test data, so it does not require Kaggle credentials or raw competition files.
-
-## Results
-
-Top 20 frequent targets:
-
-```text
-Mean multi-label log loss: 0.231601
-```
-
-All 206 scored targets:
-
-```text
-Mean multi-label log loss: 0.056092
-```
-
-The full 206-target score is not directly comparable to the top-20 score because many rare targets are mostly zero.
-
-## Baseline Comparison
-
-A feature-free dummy prior baseline was added to compare the Logistic Regression model against target prevalence only.
-
-Run:
-
-```bash
-PYTHONPATH=src python -m moa.train_prior_baseline
-```
-
-## Logistic Regression Class Weight Comparison
-
-The initial Logistic Regression baseline used `class_weight="balanced"`. Because the dummy prior baseline outperformed the class-balanced Logistic Regression model, I added a controlled comparison between balanced and unbalanced Logistic Regression using the same train/validation split.
-
-Run:
-
-```bash
-PYTHONPATH=src python -m moa.train_logistic_comparison
-```
-
-Current comparison:
-
-```text
-dummy_prior          mean log loss: 0.021202
-logistic_unbalanced  mean log loss: 0.024701
-logistic_balanced    mean log loss: 0.056092
-```
-
-Current observation:
-
-Removing `class_weight="balanced"` substantially improved Logistic Regression validation log loss. This suggests that class weighting may hurt probability calibration under mean multi-label log loss for this highly imbalanced dataset.
-
-However, the dummy prior baseline still slightly outperforms the current unbalanced Logistic Regression model. This suggests that target prevalence remains a very strong baseline, and the next step is to analyze target imbalance, rare-label validation behavior, and probability calibration more deeply.
-
-## Next Steps
-
-- Add target prevalence and rare-label validation report
-- Add probability calibration analysis
-- Add tree-based baselines such as LightGBM, XGBoost, or ExtraTrees
-- Add a PyTorch MLP baseline after classical baselines are better understood
-- Add a FastAPI inference endpoint
+- Per-target OOF diagnostics and rare-label analysis
+- Treatment-only training with control-aware evaluation
+- Logistic Regression regularization analysis
+- Nonlinear classical ML baselines
+- PyTorch MLP evaluated under the same OOF framework
+- Probability calibration and model ensembling
+- Lightweight inference API after the modeling pipeline is stable
