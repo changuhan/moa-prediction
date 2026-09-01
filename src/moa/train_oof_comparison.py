@@ -14,6 +14,7 @@ from moa.data import (
     load_raw_data,
     make_X_y,
 )
+from moa.diagnostics import make_per_target_results
 from moa.metrics import mean_multilabel_log_loss
 from moa.modeling import build_logistic_ovr_pipeline
 from moa.oof import (
@@ -264,6 +265,39 @@ def main():
     )
 
     print()
+    _, prior_target_losses = mean_multilabel_log_loss(
+        y_true=y,
+        y_pred=prior_controlled_predictions,
+        target_names=selected_targets,
+    )
+
+    _, logistic_target_losses = mean_multilabel_log_loss(
+        y_true=y,
+        y_pred=logistic_controlled_predictions,
+        target_names=selected_targets,
+    )
+
+    target_counts = y[selected_targets].sum(axis=0)
+
+    per_target_results = make_per_target_results(
+        target_names=selected_targets,
+        target_counts=target_counts,
+        n_samples=len(y),
+        prior_losses=prior_target_losses,
+        logistic_losses=logistic_target_losses,
+    )
+
+    per_target_output_path = REPORT_DIR / (
+        "oof_per_target_diagnostics_"
+        f"top{len(selected_targets)}_"
+        f"folds{args.n_splits}.csv"
+    )
+
+    per_target_results.to_csv(
+        per_target_output_path,
+        index=False,
+    )
+
     print("Overall OOF results:")
     print(overall_results.to_string(index=False))
     print()
@@ -272,6 +306,7 @@ def main():
         f"{elapsed_seconds:.1f} seconds"
     )
     print(f"Saved results to {output_path}")
+    print(f"Saved per-target diagnostics to {per_target_output_path}")
 
 
 if __name__ == "__main__":
